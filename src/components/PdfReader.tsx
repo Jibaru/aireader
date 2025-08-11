@@ -1,4 +1,5 @@
 "use client";
+import { AudioProgressBar } from "@/components/AudioProgressBar";
 import { PdfViewer } from "@/components/PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -317,6 +318,7 @@ export function PdfReader() {
 					Clear PDF cache
 				</Button>
 			</div>
+			<AudioProgressBar player={playerRef.current} />
 		</Card>
 	);
 }
