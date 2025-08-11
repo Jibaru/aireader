@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import type { AudioQueuePlayer } from "@/lib/audio/queue";
 import { useVelocityStore } from "@/store/velocity";
@@ -116,7 +115,6 @@ export function MediaControls({
 		<Card className="space-y-4 p-4">
 			{/* Barra de progreso */}
 			<div className="space-y-2">
-				<Label className="font-medium text-sm">Progreso de Reproducción</Label>
 				<Slider
 					value={[percentage]}
 					onValueChange={handleSeek}
@@ -132,85 +130,66 @@ export function MediaControls({
 			</div>
 
 			{/* Controles de reproducción */}
-			<div className="flex items-center justify-between">
-				{/* Botones de control */}
-				<div className="flex items-center gap-2">
-					{/* Botón principal: Play inicial o Play/Pause */}
-					{!hasAudio && onPlay ? (
-						<Button
-							variant="default"
-							size="sm"
-							onClick={handlePlayPause}
-							disabled={!canPlay || isLoading}
-							className="gap-2"
-						>
-							{isLoading ? (
-								<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-							) : (
-								<Play className="h-4 w-4" />
-							)}
-							{isLoading ? "Cargando..." : playLabel}
-						</Button>
-					) : (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handlePlayPause}
-							disabled={!hasAudio || isLoading}
-							className="h-10 w-10 p-0"
-						>
-							{isLoading ? (
-								<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-							) : isPlaying ? (
-								<Pause className="h-4 w-4" />
-							) : (
-								<Play className="h-4 w-4" />
-							)}
-						</Button>
-					)}
-
+			<div className="flex items-center gap-2">
+				{/* Botón principal: Play inicial o Play/Pause */}
+				{!hasAudio && onPlay ? (
+					<Button
+						variant="default"
+						size="sm"
+						onClick={handlePlayPause}
+						disabled={!canPlay || isLoading}
+						className="gap-2"
+					>
+						{isLoading ? (
+							<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+						) : (
+							<Play className="h-4 w-4" />
+						)}
+						{isLoading ? "Cargando..." : playLabel}
+					</Button>
+				) : (
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={handleStop}
-						disabled={!hasAudio && !isPlaying}
+						onClick={handlePlayPause}
+						disabled={!hasAudio || isLoading}
 						className="h-10 w-10 p-0"
 					>
-						<Square className="h-4 w-4" />
+						{isLoading ? (
+							<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+						) : isPlaying ? (
+							<Pause className="h-4 w-4" />
+						) : (
+							<Play className="h-4 w-4" />
+						)}
 					</Button>
-				</div>
+				)}
 
-				{/* Indicador de tiempo */}
-				<div className="font-mono text-muted-foreground text-sm tabular-nums">
-					{hasAudio ? (
-						<span>
-							{formatTime(currentTime)} / {formatTime(duration)}
-						</span>
-					) : (
-						<span>--:-- / --:--</span>
-					)}
-				</div>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={handleStop}
+					disabled={!hasAudio && !isPlaying}
+					className="h-10 w-10 p-0"
+				>
+					<Square className="h-4 w-4" />
+				</Button>
 			</div>
 
 			{/* Control de velocidad */}
-			<div className="space-y-3">
-				<Label className="font-medium text-sm">
-					Velocidad de Reproducción: {playbackRate}x
-				</Label>
-				<div className="space-y-2">
-					<Slider
-						value={[getSliderValue(playbackRate)]}
-						onValueChange={handleVelocityChange}
-						max={VELOCITY_OPTIONS.length - 1}
-						min={0}
-						step={1}
-						className="w-full"
-					/>
-					<div className="flex justify-between text-muted-foreground text-xs">
-						{VELOCITY_OPTIONS.map((speed) => (
-							<span key={speed}>{speed}x</span>
-						))}
-					</div>
+			<div className="space-y-2">
+				<Slider
+					value={[getSliderValue(playbackRate)]}
+					onValueChange={handleVelocityChange}
+					max={VELOCITY_OPTIONS.length - 1}
+					min={0}
+					step={1}
+					className="w-full"
+				/>
+				<div className="flex justify-between text-muted-foreground text-xs">
+					{VELOCITY_OPTIONS.map((speed) => (
+						<span key={speed}>{speed}x</span>
+					))}
 				</div>
 			</div>
 		</Card>
