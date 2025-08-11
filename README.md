@@ -1,33 +1,45 @@
-AIReader: PDF & Text to Speech using ElevenLabs
+# AIReader
 
-Setup
+A professional text-to-speech application that converts PDFs and text into natural-sounding audio using ElevenLabs AI voices.
 
-1) Create `.env.local` with:
+## Features
 
-```
-ELEVENLABS_API_KEY=
-MISTRAL_API_KEY=
-OPENAI_API_KEY=
-```
+- **PDF to Speech**: Upload PDFs and listen to pages using OCR technology
+- **Text to Speech**: Convert any text into speech with customizable playback
+- **Voice Cloning**: Create custom AI voices from audio samples
+- **Smart Caching**: Efficient PDF page caching for faster playback
+- **Playback Control**: Adjustable speed and position controls
+- **Multiple Voices**: Choose from default or custom cloned voices
 
-2) Install deps and run:
+## Quick Start
 
-```
+1. Clone the repository and install dependencies:
+```bash
 bun install
+```
+
+2. Create `.env.local` file with your API keys:
+```bash
+ELEVENLABS_API_KEY=your_elevenlabs_key
+MISTRAL_API_KEY=your_mistral_key
+OPENAI_API_KEY=your_openai_key
+```
+
+3. Start the development server:
+```bash
 bun run dev
 ```
 
-Open http://localhost:3000
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-Features
+## Technology Stack
 
-- Upload a PDF and listen from a character offset
-- Type text and listen
-- Clone a voice from audio samples; select default or custom voices
-- Smooth chunked playback for uninterrupted listening
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, Radix UI components
+- **AI Services**: ElevenLabs TTS, Mistral AI (OCR), OpenAI
+- **PDF Processing**: PDF.js for rendering and text extraction
+- **State Management**: Zustand
 
-Tech
+## License
 
-- Next.js App Router + TypeScript + Tailwind + ShadCN
-- ElevenLabs SDK
-- pdf-parse for server-side PDF text extraction
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
