@@ -2,7 +2,7 @@ import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractText, uploadFile } from "@/lib/mistral/helpers";
-import { translateToSpanish } from "@/lib/openai/helpers";
+// import { translateToSpanish } from "@/lib/openai/helpers";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
 			// Upload to Mistral and extract text
 			const signedUrl = await uploadFile(tempPath);
 			const text = await extractText(signedUrl);
-			const translatedText = await translateToSpanish(text);
+			// const translatedText = await translateToSpanish(text);
 
 			// Clean up temp file
 			await unlink(tempPath);
 
-			return NextResponse.json({ text: translatedText });
+			return NextResponse.json({ text });
 		} catch (error) {
 			// Clean up temp file in case of error
 			try {

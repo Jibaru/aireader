@@ -32,7 +32,7 @@ export function MediaControls({
 	const [duration, setDuration] = useState(0);
 	const [percentage, setPercentage] = useState(0);
 
-	// El componente siempre está visible, pero se deshabilita cuando no hay reproductor o audio
+	// Component is always visible, but disabled when there's no player or audio
 	const hasAudio = player && duration > 0;
 
 	useEffect(() => {
@@ -145,7 +145,7 @@ export function MediaControls({
 						) : (
 							<Play className="h-4 w-4" />
 						)}
-						{isLoading ? "Cargando..." : playLabel}
+						{isLoading ? "Loading..." : playLabel}
 					</Button>
 				) : (
 					<Button

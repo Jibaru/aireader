@@ -6,13 +6,23 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 // Page-level TTS; no chunking per page
 import { AudioQueuePlayer } from "@/lib/audio/queue";
+import { pdfLibrary } from "@/lib/pdf/library";
 import { ttsCache } from "@/lib/pdf/tts-cache";
 import { useVelocityStore } from "@/store/velocity";
 import { useVoiceStore } from "@/store/voices";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 
-export function PdfReader() {
+export const PdfReader = forwardRef<{
+	loadFromLibrary: (blob: Blob, id: string) => void;
+}>(function PdfReader(_, ref) {
 	const { selectedVoiceId } = useVoiceStore();
 	const { playbackRate } = useVelocityStore();
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -59,13 +69,41 @@ export function PdfReader() {
 	async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
 		if (!file) return;
-		setPdfUrl(URL.createObjectURL(file));
-		// Generate unique PDF identifier for caching
-		const id = await ttsCache.generatePdfId(file);
-		setPdfId(id);
-		// PDF is loaded for viewing
-		setCurrentPage(1);
+
+		try {
+			setPdfUrl(URL.createObjectURL(file));
+			// Generate unique PDF identifier for caching
+			const id = await ttsCache.generatePdfId(file);
+			setPdfId(id);
+			// PDF is loaded for viewing
+			setCurrentPage(1);
+
+			// Automatically save to library
+			await pdfLibrary.addPdf(file);
+		} catch (error) {
+			console.error("Error processing PDF:", error);
+		}
 	}
+
+	// Function to load PDF from library
+	const loadFromLibrary = useCallback(async (pdfBlob: Blob, pdfId: string) => {
+		try {
+			setPdfUrl(URL.createObjectURL(pdfBlob));
+			setPdfId(pdfId);
+			setCurrentPage(1);
+		} catch (error) {
+			console.error("Error loading PDF from library:", error);
+		}
+	}, []);
+
+	// Expose functions to parent component
+	useImperativeHandle(
+		ref,
+		() => ({
+			loadFromLibrary,
+		}),
+		[loadFromLibrary],
+	);
 
 	async function enqueueChunk(chunkText: string, voiceId: string) {
 		const res = await fetch("/api/tts", {
@@ -316,4 +354,4 @@ export function PdfReader() {
 			/>
 		</Card>
 	);
-}
+});
