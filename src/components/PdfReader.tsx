@@ -1,5 +1,5 @@
 "use client";
-import { AudioProgressBar } from "@/components/AudioProgressBar";
+import { MediaControls } from "@/components/MediaControls";
 import { PdfViewer } from "@/components/PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -285,6 +285,7 @@ export function PdfReader() {
 					</span>
 				)}
 			</div>
+
 			<div className="flex flex-wrap gap-2">
 				<Button
 					onClick={onPlay}
@@ -304,13 +305,6 @@ export function PdfReader() {
 					{isLoadingCache ? "Loading…" : "Load PDF"}
 				</Button>
 				<Button
-					variant="secondary"
-					onClick={onStop}
-					className="flex-1 sm:flex-none"
-				>
-					Stop
-				</Button>
-				<Button
 					variant="outline"
 					onClick={onClearCache}
 					className="flex-1 sm:flex-none"
@@ -318,7 +312,12 @@ export function PdfReader() {
 					Clear PDF cache
 				</Button>
 			</div>
-			<AudioProgressBar player={playerRef.current} />
+
+			<MediaControls
+				player={playerRef.current}
+				onStop={onStop}
+				isLoading={isLoading}
+			/>
 		</Card>
 	);
 }

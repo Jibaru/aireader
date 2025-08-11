@@ -1,5 +1,5 @@
 "use client";
-import { AudioProgressBar } from "@/components/AudioProgressBar";
+import { MediaControls } from "@/components/MediaControls";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -74,18 +74,22 @@ export function TextReader() {
 					onChange={(e) => setText(e.target.value)}
 				/>
 			</div>
+
 			<div className="flex gap-2">
 				<Button
 					onClick={onPlay}
 					disabled={!selectedVoiceId || !text || isLoading}
+					className="flex-1 sm:flex-none"
 				>
 					{isLoading ? "Queueing…" : "Play"}
 				</Button>
-				<Button variant="secondary" onClick={onStop}>
-					Stop
-				</Button>
 			</div>
-			<AudioProgressBar player={playerRef.current} />
+
+			<MediaControls
+				player={playerRef.current}
+				onStop={onStop}
+				isLoading={isLoading}
+			/>
 		</Card>
 	);
 }
