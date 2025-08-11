@@ -8,20 +8,40 @@ import { AudioQueuePlayer } from "@/lib/audio/queue";
 import { ttsCache } from "@/lib/pdf/tts-cache";
 import { useVoiceStore } from "@/store/voices";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function PdfReader() {
 	const { selectedVoiceId } = useVoiceStore();
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isLoadingCache, setIsLoadingCache] = useState(false);
 	const [currentPage, setCurrentPage] = useState<number>(1);
 	const [pdfId, setPdfId] = useState<string | null>(null);
+	const [isCurrentPageCached, setIsCurrentPageCached] = useState(false);
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
 		if (!playerRef.current) playerRef.current = new AudioQueuePlayer();
 		return playerRef.current;
 	}
+
+	const updateCachedStatus = useCallback(async () => {
+		if (!pdfId || !selectedVoiceId) {
+			setIsCurrentPageCached(false);
+			return;
+		}
+		const isCached = await ttsCache.isPageCached(
+			pdfId,
+			selectedVoiceId,
+			currentPage,
+		);
+		setIsCurrentPageCached(isCached);
+	}, [pdfId, selectedVoiceId, currentPage]);
+
+	// Update cached status when page, PDF, or voice changes
+	useEffect(() => {
+		updateCachedStatus();
+	}, [updateCachedStatus]);
 
 	async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
@@ -82,7 +102,46 @@ export function PdfReader() {
 		const blob = await enqueueChunk(pageText, voiceId);
 		if (blob) {
 			await ttsCache.addPageToCache(pdfId, voiceId, pageNumber, blob);
+			// Update cached status after adding to cache
+			await updateCachedStatus();
 		}
+	}
+
+	async function loadPageToCache(
+		pageNumber: number,
+		voiceId: string,
+		text?: string,
+	) {
+		if (!pdfId || !selectedVoiceId) return;
+
+		// Check if already cached
+		const isCached = await ttsCache.isPageCached(pdfId, voiceId, pageNumber);
+		if (isCached) return;
+
+		// If not cached and text is not provided, extract text first
+		let pageText = text;
+		if (!pageText) {
+			const inputEl = document.getElementById(
+				"pdfFile",
+			) as HTMLInputElement | null;
+			const file = inputEl?.files?.[0];
+			if (!file) return;
+			pageText = await extractPageText(file, pageNumber).catch(() => "");
+			if (!pageText) return;
+		}
+
+		// Generate TTS and cache it (without playing)
+		const res = await fetch("/api/tts", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ text: pageText, voiceId }),
+		});
+		if (!res.ok) return;
+		const blob = await res.blob();
+
+		await ttsCache.addPageToCache(pdfId, voiceId, pageNumber, blob);
+		// Update cached status after adding to cache
+		await updateCachedStatus();
 	}
 
 	async function extractPageAsImage(
@@ -164,6 +223,15 @@ export function PdfReader() {
 		setIsLoading(false);
 	}
 
+	async function onLoad() {
+		if (!selectedVoiceId || !pdfUrl || !pdfId) return;
+		setIsLoadingCache(true);
+
+		// Load current page to cache without playing
+		await loadPageToCache(currentPage, selectedVoiceId);
+		setIsLoadingCache(false);
+	}
+
 	function onStop() {
 		ensurePlayer().clear();
 	}
@@ -196,8 +264,13 @@ export function PdfReader() {
 					/>
 				</div>
 			) : null}
-			<div className="text-muted-foreground text-sm">
+			<div className="flex items-center gap-2 text-muted-foreground text-sm">
 				Currently on page {currentPage}. Click Play to read this page with OCR.
+				{isCurrentPageCached && (
+					<span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 font-medium text-green-700 text-xs ring-1 ring-green-600/20 ring-inset">
+						Cached
+					</span>
+				)}
 			</div>
 			<div className="flex gap-2">
 				<Button
@@ -205,6 +278,15 @@ export function PdfReader() {
 					disabled={!selectedVoiceId || !pdfUrl || isLoading}
 				>
 					{isLoading ? "Queueing…" : "Play PDF"}
+				</Button>
+				<Button
+					variant="secondary"
+					onClick={onLoad}
+					disabled={
+						!selectedVoiceId || !pdfUrl || isLoadingCache || isCurrentPageCached
+					}
+				>
+					{isLoadingCache ? "Loading…" : "Load PDF"}
 				</Button>
 				<Button variant="secondary" onClick={onStop}>
 					Stop
