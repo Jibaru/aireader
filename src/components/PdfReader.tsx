@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 // Page-level TTS; no chunking per page
 import { AudioQueuePlayer } from "@/lib/audio/queue";
 import { ttsCache } from "@/lib/pdf/tts-cache";
+import { useVelocityStore } from "@/store/velocity";
 import { useVoiceStore } from "@/store/voices";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function PdfReader() {
 	const { selectedVoiceId } = useVoiceStore();
+	const { playbackRate } = useVelocityStore();
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isLoadingCache, setIsLoadingCache] = useState(false);
@@ -21,7 +23,10 @@ export function PdfReader() {
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
-		if (!playerRef.current) playerRef.current = new AudioQueuePlayer();
+		if (!playerRef.current) {
+			playerRef.current = new AudioQueuePlayer();
+		}
+		playerRef.current.setPlaybackRate(playbackRate);
 		return playerRef.current;
 	}
 
@@ -42,6 +47,13 @@ export function PdfReader() {
 	useEffect(() => {
 		updateCachedStatus();
 	}, [updateCachedStatus]);
+
+	// Update playback rate when velocity changes
+	useEffect(() => {
+		if (playerRef.current) {
+			playerRef.current.setPlaybackRate(playbackRate);
+		}
+	}, [playbackRate]);
 
 	async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];

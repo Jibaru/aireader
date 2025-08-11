@@ -1,5 +1,6 @@
 import { PdfReader } from "@/components/PdfReader";
 import { TextReader } from "@/components/TextReader";
+import { VelocitySelector } from "@/components/VelocitySelector";
 import { VoiceCloner } from "@/components/VoiceCloner";
 import { VoiceSelector } from "@/components/VoiceSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +15,10 @@ export default function Home() {
 						Listen to PDFs and text using ElevenLabs voices
 					</p>
 				</div>
-				<VoiceSelector />
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+					<VoiceSelector />
+					<VelocitySelector />
+				</div>
 				<Tabs defaultValue="text" className="w-full">
 					<TabsList className="grid w-full grid-cols-3">
 						<TabsTrigger value="text">Text to Speech</TabsTrigger>

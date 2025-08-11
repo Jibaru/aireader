@@ -9,20 +9,32 @@ import {
 	sliceChunksFromOffset,
 	splitTextIntoChunks,
 } from "@/lib/text/chunkText";
+import { useVelocityStore } from "@/store/velocity";
 import { useVoiceStore } from "@/store/voices";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function TextReader() {
 	const { selectedVoiceId } = useVoiceStore();
+	const { playbackRate } = useVelocityStore();
 	const [text, setText] = useState("");
 	const [startOffset, setStartOffset] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
-		if (!playerRef.current) playerRef.current = new AudioQueuePlayer();
+		if (!playerRef.current) {
+			playerRef.current = new AudioQueuePlayer();
+		}
+		playerRef.current.setPlaybackRate(playbackRate);
 		return playerRef.current;
 	}
+
+	// Update playback rate when velocity changes
+	useEffect(() => {
+		if (playerRef.current) {
+			playerRef.current.setPlaybackRate(playbackRate);
+		}
+	}, [playbackRate]);
 
 	async function enqueueChunk(chunkText: string, voiceId: string) {
 		const res = await fetch("/api/tts", {

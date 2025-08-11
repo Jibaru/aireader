@@ -8,6 +8,7 @@ export class AudioQueuePlayer {
 	private queue: AudioChunkItem[] = [];
 	private isPlaying = false;
 	private onEndCallback?: () => void;
+	private playbackRate = 1;
 
 	constructor() {
 		this.audio = new Audio();
@@ -16,6 +17,15 @@ export class AudioQueuePlayer {
 
 	setOnEnded(callback: () => void) {
 		this.onEndCallback = callback;
+	}
+
+	setPlaybackRate(rate: number) {
+		this.playbackRate = rate;
+		this.audio.playbackRate = rate;
+	}
+
+	getPlaybackRate(): number {
+		return this.playbackRate;
 	}
 
 	enqueue(item: AudioChunkItem) {
@@ -41,6 +51,7 @@ export class AudioQueuePlayer {
 		}
 		this.isPlaying = true;
 		this.audio.src = next.url;
+		this.audio.playbackRate = this.playbackRate; // Apply playback rate to new audio
 		try {
 			await this.audio.play();
 		} catch (e) {
