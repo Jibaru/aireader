@@ -14,6 +14,7 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const [numPages, setNumPages] = useState<number>(1);
 	const [pageNumber, setPageNumber] = useState<number>(1);
+	const [containerWidth, setContainerWidth] = useState<number>(0);
 	useEffect(() => {
 		// Configure worker once and align with installed pdfjs-dist version
 		// Configure worker with proper typing
@@ -29,6 +30,23 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 	useEffect(() => {
 		onPageChange?.(pageNumber);
 	}, [pageNumber, onPageChange]);
+
+	// Track container width for responsive PDF rendering
+	useEffect(() => {
+		if (!containerRef.current) return;
+
+		const updateContainerWidth = () => {
+			if (containerRef.current) {
+				setContainerWidth(containerRef.current.clientWidth);
+			}
+		};
+
+		const resizeObserver = new ResizeObserver(updateContainerWidth);
+		resizeObserver.observe(containerRef.current);
+		updateContainerWidth(); // Initial measurement
+
+		return () => resizeObserver.disconnect();
+	}, []);
 
 	// Prevent wheel scrolling inside the viewer; navigation only via buttons
 	useEffect(() => {
@@ -49,7 +67,10 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 		<div className="w-full space-y-3">
 			<div
 				ref={containerRef}
-				className="mx-auto h-[1100px] w-[840px] overflow-hidden rounded-md border bg-background"
+				className="mx-auto max-w-full overflow-hidden rounded-md border bg-background sm:max-w-[840px]"
+				style={{
+					height: containerWidth > 0 ? "auto" : "600px", // Fallback height while measuring
+				}}
 			>
 				<Document
 					file={fileUrl}
@@ -58,7 +79,11 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 				>
 					<Page
 						pageNumber={pageNumber}
-						height={1000}
+						width={
+							containerWidth > 0
+								? Math.min(containerWidth - 32, 800)
+								: undefined
+						} // 32px for padding, max 800px
 						renderAnnotationLayer
 						renderTextLayer
 						loading={<div className="p-6">Loading…</div>}

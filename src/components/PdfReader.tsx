@@ -284,10 +284,11 @@ export function PdfReader() {
 					</span>
 				)}
 			</div>
-			<div className="flex gap-2">
+			<div className="flex flex-wrap gap-2">
 				<Button
 					onClick={onPlay}
 					disabled={!selectedVoiceId || !pdfUrl || isLoading}
+					className="flex-1 sm:flex-none"
 				>
 					{isLoading ? "Queueing…" : "Play PDF"}
 				</Button>
@@ -297,13 +298,22 @@ export function PdfReader() {
 					disabled={
 						!selectedVoiceId || !pdfUrl || isLoadingCache || isCurrentPageCached
 					}
+					className="flex-1 sm:flex-none"
 				>
 					{isLoadingCache ? "Loading…" : "Load PDF"}
 				</Button>
-				<Button variant="secondary" onClick={onStop}>
+				<Button
+					variant="secondary"
+					onClick={onStop}
+					className="flex-1 sm:flex-none"
+				>
 					Stop
 				</Button>
-				<Button variant="outline" onClick={onClearCache}>
+				<Button
+					variant="outline"
+					onClick={onClearCache}
+					className="flex-1 sm:flex-none"
+				>
 					Clear PDF cache
 				</Button>
 			</div>
