@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -12,6 +12,8 @@ type PdfViewerProps = {
 
 export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+	const buttonCooldownRef = useRef<boolean>(false);
 	const [numPages, setNumPages] = useState<number>(1);
 	const [pageNumber, setPageNumber] = useState<number>(1);
 	const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -24,12 +26,51 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 			"pdfjs-dist/build/pdf.worker.min.mjs",
 			import.meta.url,
 		).toString();
+
+		// Suppress TextLayer cancellation warnings
+		const originalConsoleError = console.error;
+		console.error = (...args) => {
+			const message = args[0]?.toString() || "";
+			if (
+				message.includes("TextLayer task cancelled") ||
+				message.includes("AbortException")
+			) {
+				return; // Suppress these specific warnings
+			}
+			originalConsoleError.apply(console, args);
+		};
+
+		return () => {
+			console.error = originalConsoleError;
+		};
 	}, []);
 
-	// Notify parent when page changes
+	// Debounced page change handler
+	const debouncedPageChange = useCallback(
+		(newPage: number) => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+			}
+			debounceTimerRef.current = setTimeout(() => {
+				onPageChange?.(newPage);
+			}, 100); // 100ms debounce
+		},
+		[onPageChange],
+	);
+
+	// Notify parent when page changes (debounced)
 	useEffect(() => {
-		onPageChange?.(pageNumber);
-	}, [pageNumber, onPageChange]);
+		debouncedPageChange(pageNumber);
+	}, [pageNumber, debouncedPageChange]);
+
+	// Cleanup debounce timer on unmount
+	useEffect(() => {
+		return () => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+			}
+		};
+	}, []);
 
 	// Track container width for responsive PDF rendering
 	useEffect(() => {
@@ -63,6 +104,31 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 		};
 	}, []);
 
+	// Debounced navigation functions
+	const handlePrevPage = useCallback(() => {
+		if (buttonCooldownRef.current) return;
+		buttonCooldownRef.current = true;
+
+		const newPage = Math.max(1, pageNumber - 1);
+		setPageNumber(newPage);
+
+		setTimeout(() => {
+			buttonCooldownRef.current = false;
+		}, 150); // 150ms cooldown
+	}, [pageNumber]);
+
+	const handleNextPage = useCallback(() => {
+		if (buttonCooldownRef.current) return;
+		buttonCooldownRef.current = true;
+
+		const newPage = Math.min(numPages, pageNumber + 1);
+		setPageNumber(newPage);
+
+		setTimeout(() => {
+			buttonCooldownRef.current = false;
+		}, 150); // 150ms cooldown
+	}, [pageNumber, numPages]);
+
 	return (
 		<div className="w-full space-y-3">
 			<div
@@ -87,17 +153,22 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 						renderAnnotationLayer
 						renderTextLayer
 						loading={<div className="p-6">Loading…</div>}
+						onRenderError={(error) => {
+							// Suppress TextLayer cancellation errors
+							if (
+								!error.message.includes("cancelled") &&
+								!error.message.includes("AbortException")
+							) {
+								console.error("PDF render error:", error);
+							}
+						}}
 					/>
 				</Document>
 			</div>
 			<div className="flex items-center justify-between">
 				<Button
 					variant="secondary"
-					onClick={() => {
-						const newPage = Math.max(1, pageNumber - 1);
-						setPageNumber(newPage);
-						onPageChange?.(newPage);
-					}}
+					onClick={handlePrevPage}
 					disabled={pageNumber <= 1}
 				>
 					Prev
@@ -105,14 +176,7 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 				<div className="text-muted-foreground text-sm">
 					Page {pageNumber} / {numPages}
 				</div>
-				<Button
-					onClick={() => {
-						const newPage = Math.min(numPages, pageNumber + 1);
-						setPageNumber(newPage);
-						onPageChange?.(newPage);
-					}}
-					disabled={pageNumber >= numPages}
-				>
+				<Button onClick={handleNextPage} disabled={pageNumber >= numPages}>
 					Next
 				</Button>
 			</div>
