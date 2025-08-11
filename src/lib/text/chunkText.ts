@@ -37,9 +37,8 @@ export function splitTextIntoChunks(
 	const chunks: TextChunk[] = [];
 	let currentChunk = "";
 	let currentStart = 0;
-	let chunkStartIdx = 0;
 
-	sentences.forEach((s, i) => {
+	for (const s of sentences) {
 		const candidate =
 			currentChunk.length === 0 ? s.text : `${currentChunk} ${s.text}`;
 		if (candidate.length > maxChars && currentChunk.length > 0) {
@@ -51,14 +50,13 @@ export function splitTextIntoChunks(
 			});
 			currentChunk = s.text.trim();
 			currentStart = s.start;
-			chunkStartIdx = i;
 		} else {
 			if (currentChunk.length === 0) {
 				currentStart = s.start;
 			}
 			currentChunk = candidate.trim();
 		}
-	});
+	}
 
 	if (currentChunk.length > 0) {
 		chunks.push({

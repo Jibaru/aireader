@@ -16,8 +16,10 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 	const [pageNumber, setPageNumber] = useState<number>(1);
 	useEffect(() => {
 		// Configure worker once and align with installed pdfjs-dist version
-		// biome-ignore lint/suspicious/noExplicitAny: pdfjs types don't export GlobalWorkerOptions properly
-		(pdfjs as any).GlobalWorkerOptions.workerSrc = new URL(
+		// Configure worker with proper typing
+		(
+			pdfjs as typeof pdfjs & { GlobalWorkerOptions: { workerSrc: string } }
+		).GlobalWorkerOptions.workerSrc = new URL(
 			"pdfjs-dist/build/pdf.worker.min.mjs",
 			import.meta.url,
 		).toString();
@@ -39,8 +41,7 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 		const el = containerRef.current;
 		if (el) el.addEventListener("wheel", blockWheel, { passive: false });
 		return () => {
-			// biome-ignore lint/suspicious/noExplicitAny: EventListener type mismatch with removeEventListener
-			if (el) el.removeEventListener("wheel", blockWheel as any);
+			if (el) el.removeEventListener("wheel", blockWheel);
 		};
 	}, []);
 

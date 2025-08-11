@@ -6,8 +6,10 @@
   - Detects headings by larger font size or ALL CAPS
 */
 
-// biome-ignore lint/suspicious/noExplicitAny: pdfjs-dist types are heavy; we keep this lightweight for the client bundle
-type PdfJsPage = any;
+type PdfJsPage = {
+	getTextContent(): Promise<{ items: TextItem[] }>;
+	getViewport(params: { scale: number }): { height?: number };
+};
 
 type TextItem = {
 	str: string;

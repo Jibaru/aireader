@@ -54,7 +54,7 @@ export class AudioQueuePlayer {
 		this.audio.playbackRate = this.playbackRate; // Apply playback rate to new audio
 		try {
 			await this.audio.play();
-		} catch (e) {
+		} catch {
 			// swallow errors to keep queue running
 			void this.playNext();
 		}

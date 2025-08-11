@@ -25,8 +25,7 @@ export async function POST(req: NextRequest) {
 			outputFormat: outputFormat || "mp3_44100_128",
 		});
 
-		// biome-ignore lint/suspicious/noExplicitAny: ElevenLabs client returns ReadableStream but Response expects BodyInit
-		return new Response(audioStream as any, {
+		return new Response(audioStream as ReadableStream, {
 			status: 200,
 			headers: {
 				"content-type": "audio/mpeg",

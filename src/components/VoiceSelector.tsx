@@ -11,6 +11,11 @@ import { DEFAULT_ELEVENLABS_VOICE_ID } from "@/lib/elevenlabs/constants";
 import { useVoiceStore } from "@/store/voices";
 import { useEffect } from "react";
 
+type ElevenLabsVoice = {
+	voiceId: string;
+	name: string;
+};
+
 export function VoiceSelector() {
 	const { voices, selectedVoiceId, setVoices, selectVoice } = useVoiceStore();
 
@@ -19,15 +24,13 @@ export function VoiceSelector() {
 			try {
 				const res = await fetch("/api/voices");
 				const data = await res.json();
-				// biome-ignore lint/suspicious/noExplicitAny: ElevenLabs API response has dynamic voice structure
-				const mapped = (data.voices ?? []).map((v: any) => ({
+				const mapped = (data.voices ?? []).map((v: ElevenLabsVoice) => ({
 					voiceId: v.voiceId,
 					name: v.name,
 				}));
 				// Ensure default voice is present and selected by default
 				const hasDefault = mapped.some(
-					// biome-ignore lint/suspicious/noExplicitAny: Voice object from mapped array above
-					(v: any) => v.voiceId === DEFAULT_ELEVENLABS_VOICE_ID,
+					(v: ElevenLabsVoice) => v.voiceId === DEFAULT_ELEVENLABS_VOICE_ID,
 				);
 				const withDefault = hasDefault
 					? mapped
@@ -38,7 +41,7 @@ export function VoiceSelector() {
 
 				setVoices(withDefault);
 				if (!selectedVoiceId) selectVoice(DEFAULT_ELEVENLABS_VOICE_ID);
-			} catch (e) {
+			} catch {
 				// ignore
 			}
 		}
