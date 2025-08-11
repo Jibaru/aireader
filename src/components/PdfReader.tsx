@@ -288,13 +288,6 @@ export function PdfReader() {
 
 			<div className="flex flex-wrap gap-2">
 				<Button
-					onClick={onPlay}
-					disabled={!selectedVoiceId || !pdfUrl || isLoading}
-					className="flex-1 sm:flex-none"
-				>
-					{isLoading ? "Queueing…" : "Play PDF"}
-				</Button>
-				<Button
 					variant="secondary"
 					onClick={onLoad}
 					disabled={
@@ -316,7 +309,10 @@ export function PdfReader() {
 			<MediaControls
 				player={playerRef.current}
 				onStop={onStop}
+				onPlay={onPlay}
 				isLoading={isLoading}
+				canPlay={!!(selectedVoiceId && pdfUrl)}
+				playLabel="Play PDF"
 			/>
 		</Card>
 	);

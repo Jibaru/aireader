@@ -1,6 +1,5 @@
 "use client";
 import { MediaControls } from "@/components/MediaControls";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,20 +74,13 @@ export function TextReader() {
 				/>
 			</div>
 
-			<div className="flex gap-2">
-				<Button
-					onClick={onPlay}
-					disabled={!selectedVoiceId || !text || isLoading}
-					className="flex-1 sm:flex-none"
-				>
-					{isLoading ? "Queueing…" : "Play"}
-				</Button>
-			</div>
-
 			<MediaControls
 				player={playerRef.current}
 				onStop={onStop}
+				onPlay={onPlay}
 				isLoading={isLoading}
+				canPlay={!!(selectedVoiceId && text)}
+				playLabel="Play"
 			/>
 		</Card>
 	);

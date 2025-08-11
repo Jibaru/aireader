@@ -11,7 +11,10 @@ import { useEffect, useState } from "react";
 type MediaControlsProps = {
 	player: AudioQueuePlayer | null;
 	onStop: () => void;
+	onPlay?: () => void;
 	isLoading?: boolean;
+	canPlay?: boolean; // Para saber si se puede iniciar reproducción
+	playLabel?: string; // Texto personalizado para el botón de play inicial
 };
 
 const VELOCITY_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -19,7 +22,10 @@ const VELOCITY_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 export function MediaControls({
 	player,
 	onStop,
+	onPlay,
 	isLoading = false,
+	canPlay = false,
+	playLabel = "Play",
 }: MediaControlsProps) {
 	const { playbackRate, setPlaybackRate } = useVelocityStore();
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -58,6 +64,13 @@ export function MediaControls({
 	}, [player, playbackRate]);
 
 	const handlePlayPause = () => {
+		// Si no hay audio cargado y tenemos función onPlay, iniciar reproducción
+		if (!hasAudio && onPlay && canPlay) {
+			onPlay();
+			return;
+		}
+
+		// Si hay audio cargado, pausar/resumir
 		if (!player || !hasAudio) return;
 
 		if (isPlaying) {
@@ -122,21 +135,39 @@ export function MediaControls({
 			<div className="flex items-center justify-between">
 				{/* Botones de control */}
 				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handlePlayPause}
-						disabled={!hasAudio || isLoading}
-						className="h-10 w-10 p-0"
-					>
-						{isLoading ? (
-							<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-						) : isPlaying ? (
-							<Pause className="h-4 w-4" />
-						) : (
-							<Play className="h-4 w-4" />
-						)}
-					</Button>
+					{/* Botón principal: Play inicial o Play/Pause */}
+					{!hasAudio && onPlay ? (
+						<Button
+							variant="default"
+							size="sm"
+							onClick={handlePlayPause}
+							disabled={!canPlay || isLoading}
+							className="gap-2"
+						>
+							{isLoading ? (
+								<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+							) : (
+								<Play className="h-4 w-4" />
+							)}
+							{isLoading ? "Cargando..." : playLabel}
+						</Button>
+					) : (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handlePlayPause}
+							disabled={!hasAudio || isLoading}
+							className="h-10 w-10 p-0"
+						>
+							{isLoading ? (
+								<div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+							) : isPlaying ? (
+								<Pause className="h-4 w-4" />
+							) : (
+								<Play className="h-4 w-4" />
+							)}
+						</Button>
+					)}
 
 					<Button
 						variant="outline"
