@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 // Page-level TTS; no chunking per page
 import { AudioQueuePlayer } from "@/lib/audio/queue";
+import { ttsCache } from "@/lib/pdf/tts-cache";
 import { useVoiceStore } from "@/store/voices";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
 import { useRef, useState } from "react";
@@ -14,6 +15,7 @@ export function PdfReader() {
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [currentPage, setCurrentPage] = useState<number>(1);
+	const [pdfId, setPdfId] = useState<string | null>(null);
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
@@ -25,6 +27,9 @@ export function PdfReader() {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		setPdfUrl(URL.createObjectURL(file));
+		// Generate unique PDF identifier for caching
+		const id = await ttsCache.generatePdfId(file);
+		setPdfId(id);
 		// PDF is loaded for viewing
 		setCurrentPage(1);
 	}
@@ -39,6 +44,45 @@ export function PdfReader() {
 		const blob = await res.blob();
 		const url = URL.createObjectURL(blob);
 		ensurePlayer().enqueue({ id: crypto.randomUUID(), url });
+		return blob;
+	}
+
+	async function enqueuePageAudio(
+		pageNumber: number,
+		voiceId: string,
+		text?: string,
+	) {
+		if (!pdfId || !selectedVoiceId) return;
+
+		// Check if page is cached
+		const cachedBlob = await ttsCache.getCachedPageAudio(
+			pdfId,
+			voiceId,
+			pageNumber,
+		);
+		if (cachedBlob) {
+			const url = URL.createObjectURL(cachedBlob);
+			ensurePlayer().enqueue({ id: crypto.randomUUID(), url });
+			return;
+		}
+
+		// If not cached and text is not provided, extract text first
+		let pageText = text;
+		if (!pageText) {
+			const inputEl = document.getElementById(
+				"pdfFile",
+			) as HTMLInputElement | null;
+			const file = inputEl?.files?.[0];
+			if (!file) return;
+			pageText = await extractPageText(file, pageNumber).catch(() => "");
+			if (!pageText) return;
+		}
+
+		// Generate TTS and cache it
+		const blob = await enqueueChunk(pageText, voiceId);
+		if (blob) {
+			await ttsCache.addPageToCache(pdfId, voiceId, pageNumber, blob);
+		}
 	}
 
 	async function extractPageAsImage(
@@ -104,33 +148,30 @@ export function PdfReader() {
 	}
 
 	async function onPlay() {
-		if (!selectedVoiceId || !pdfUrl) return;
+		if (!selectedVoiceId || !pdfUrl || !pdfId) return;
 		setIsLoading(true);
-		const inputEl = document.getElementById(
-			"pdfFile",
-		) as HTMLInputElement | null;
-		const file = inputEl?.files?.[0];
-		if (!file) {
-			setIsLoading(false);
-			return;
-		}
+
 		let pageToRead = currentPage;
 		const player = ensurePlayer();
+
 		player.setOnEnded(async () => {
 			pageToRead += 1;
-			const nextText = await extractPageText(file, pageToRead).catch(() => "");
-			if (!nextText) return;
-			await enqueueChunk(nextText, selectedVoiceId);
+			await enqueuePageAudio(pageToRead, selectedVoiceId);
 		});
-		const firstText = await extractPageText(file, pageToRead).catch(() => "");
-		if (firstText) {
-			await enqueueChunk(firstText, selectedVoiceId);
-		}
+
+		// Start playing from current page
+		await enqueuePageAudio(pageToRead, selectedVoiceId);
 		setIsLoading(false);
 	}
 
 	function onStop() {
 		ensurePlayer().clear();
+	}
+
+	async function onClearCache() {
+		await ttsCache.clearAllCache();
+		// Show some feedback (you could use a toast here)
+		console.log("PDF TTS cache cleared");
 	}
 
 	return (
@@ -167,6 +208,9 @@ export function PdfReader() {
 				</Button>
 				<Button variant="secondary" onClick={onStop}>
 					Stop
+				</Button>
+				<Button variant="outline" onClick={onClearCache}>
+					Clear PDF cache
 				</Button>
 			</div>
 		</Card>
