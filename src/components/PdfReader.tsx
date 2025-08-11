@@ -31,6 +31,9 @@ export const PdfReader = forwardRef<{
 	const [currentPage, setCurrentPage] = useState<number>(1);
 	const [pdfId, setPdfId] = useState<string | null>(null);
 	const [isCurrentPageCached, setIsCurrentPageCached] = useState(false);
+	const [currentPdfFile, setCurrentPdfFile] = useState<File | Blob | null>(
+		null,
+	);
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
@@ -72,6 +75,7 @@ export const PdfReader = forwardRef<{
 
 		try {
 			setPdfUrl(URL.createObjectURL(file));
+			setCurrentPdfFile(file);
 			// Generate unique PDF identifier for caching
 			const id = await ttsCache.generatePdfId(file);
 			setPdfId(id);
@@ -86,15 +90,21 @@ export const PdfReader = forwardRef<{
 	}
 
 	// Function to load PDF from library
-	const loadFromLibrary = useCallback(async (pdfBlob: Blob, pdfId: string) => {
-		try {
-			setPdfUrl(URL.createObjectURL(pdfBlob));
-			setPdfId(pdfId);
-			setCurrentPage(1);
-		} catch (error) {
-			console.error("Error loading PDF from library:", error);
-		}
-	}, []);
+	const loadFromLibrary = useCallback(
+		async (pdfBlob: Blob, pdfId: string) => {
+			try {
+				setPdfUrl(URL.createObjectURL(pdfBlob));
+				setCurrentPdfFile(pdfBlob);
+				setPdfId(pdfId);
+				setCurrentPage(1);
+				// Force update cached status after loading
+				setTimeout(() => updateCachedStatus(), 100);
+			} catch (error) {
+				console.error("Error loading PDF from library:", error);
+			}
+		},
+		[updateCachedStatus],
+	);
 
 	// Expose functions to parent component
 	useImperativeHandle(
@@ -140,10 +150,14 @@ export const PdfReader = forwardRef<{
 		// If not cached and text is not provided, extract text first
 		let pageText = text;
 		if (!pageText) {
-			const inputEl = document.getElementById(
-				"pdfFile",
-			) as HTMLInputElement | null;
-			const file = inputEl?.files?.[0];
+			// Try to get file from current state first, then fall back to input element
+			let file = currentPdfFile;
+			if (!file) {
+				const inputEl = document.getElementById(
+					"pdfFile",
+				) as HTMLInputElement | null;
+				file = inputEl?.files?.[0] || null;
+			}
 			if (!file) return;
 			pageText = await extractPageText(file, pageNumber).catch(() => "");
 			if (!pageText) return;
@@ -172,10 +186,14 @@ export const PdfReader = forwardRef<{
 		// If not cached and text is not provided, extract text first
 		let pageText = text;
 		if (!pageText) {
-			const inputEl = document.getElementById(
-				"pdfFile",
-			) as HTMLInputElement | null;
-			const file = inputEl?.files?.[0];
+			// Try to get file from current state first, then fall back to input element
+			let file = currentPdfFile;
+			if (!file) {
+				const inputEl = document.getElementById(
+					"pdfFile",
+				) as HTMLInputElement | null;
+				file = inputEl?.files?.[0] || null;
+			}
 			if (!file) return;
 			pageText = await extractPageText(file, pageNumber).catch(() => "");
 			if (!pageText) return;
@@ -196,7 +214,7 @@ export const PdfReader = forwardRef<{
 	}
 
 	async function extractPageAsImage(
-		file: File,
+		file: File | Blob,
 		pageNumber: number,
 	): Promise<Blob | null> {
 		const arrayBuffer = await file.arrayBuffer();
@@ -231,7 +249,7 @@ export const PdfReader = forwardRef<{
 	}
 
 	async function extractPageText(
-		file: File,
+		file: File | Blob,
 		pageNumber: number,
 	): Promise<string> {
 		const imageBlob = await extractPageAsImage(file, pageNumber);

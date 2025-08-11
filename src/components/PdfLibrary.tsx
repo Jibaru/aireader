@@ -180,12 +180,6 @@ export function PdfLibrary({ onSelectPdf }: PdfLibraryProps) {
 									<Trash2 className="h-4 w-4" />
 								</Button>
 							</div>
-
-							<div className="mt-3">
-								<Button variant="outline" size="sm" className="w-full">
-									Select
-								</Button>
-							</div>
 						</Card>
 					))}
 				</div>
