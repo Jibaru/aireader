@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractText, uploadFile } from "@/lib/mistral/helpers";
 import { translateToSpanish } from "@/lib/openai/helpers";
-// import { translateToSpanish } from "@/lib/openai/helpers";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
