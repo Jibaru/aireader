@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type PdfViewerProps = {
 	fileUrl: string;
@@ -17,6 +18,7 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 	const [numPages, setNumPages] = useState<number>(1);
 	const [pageNumber, setPageNumber] = useState<number>(1);
 	const [containerWidth, setContainerWidth] = useState<number>(0);
+	const [pageInputValue, setPageInputValue] = useState<string>("1");
 	useEffect(() => {
 		// Configure worker once and align with installed pdfjs-dist version
 		// Configure worker with proper typing
@@ -111,6 +113,7 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 
 		const newPage = Math.max(1, pageNumber - 1);
 		setPageNumber(newPage);
+		setPageInputValue(newPage.toString());
 
 		setTimeout(() => {
 			buttonCooldownRef.current = false;
@@ -123,11 +126,57 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 
 		const newPage = Math.min(numPages, pageNumber + 1);
 		setPageNumber(newPage);
+		setPageInputValue(newPage.toString());
 
 		setTimeout(() => {
 			buttonCooldownRef.current = false;
 		}, 150); // 150ms cooldown
 	}, [pageNumber, numPages]);
+
+	// Handle direct page input
+	const handlePageInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			// Allow empty string for typing, or numbers within valid range
+			if (
+				value === "" ||
+				(/^\d+$/.test(value) &&
+					Number.parseInt(value) >= 1 &&
+					Number.parseInt(value) <= numPages)
+			) {
+				setPageInputValue(value);
+			}
+		},
+		[numPages],
+	);
+
+	const handlePageInputSubmit = useCallback(() => {
+		const pageNum = Number.parseInt(pageInputValue);
+		if (!Number.isNaN(pageNum) && pageNum >= 1 && pageNum <= numPages) {
+			setPageNumber(pageNum);
+		} else {
+			// Reset to current page if invalid
+			setPageInputValue(pageNumber.toString());
+		}
+	}, [pageInputValue, numPages, pageNumber]);
+
+	const handlePageInputKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Enter") {
+				handlePageInputSubmit();
+				e.currentTarget.blur();
+			} else if (e.key === "Escape") {
+				setPageInputValue(pageNumber.toString());
+				e.currentTarget.blur();
+			}
+		},
+		[handlePageInputSubmit, pageNumber],
+	);
+
+	// Update input value when page changes externally
+	useEffect(() => {
+		setPageInputValue(pageNumber.toString());
+	}, [pageNumber]);
 
 	return (
 		<div className="w-full space-y-3">
@@ -173,8 +222,19 @@ export function PdfViewer({ fileUrl, onPageChange }: PdfViewerProps) {
 				>
 					Prev
 				</Button>
-				<div className="text-muted-foreground text-sm">
-					Page {pageNumber} / {numPages}
+				<div className="flex items-center gap-2 text-muted-foreground text-sm">
+					<span>Page</span>
+					<Input
+						type="text"
+						value={pageInputValue}
+						onChange={handlePageInputChange}
+						onBlur={handlePageInputSubmit}
+						onKeyDown={handlePageInputKeyDown}
+						className="h-8 w-16 text-center"
+						min={1}
+						max={numPages}
+					/>
+					<span>/ {numPages}</span>
 				</div>
 				<Button onClick={handleNextPage} disabled={pageNumber >= numPages}>
 					Next
