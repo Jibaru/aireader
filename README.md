@@ -23,6 +23,9 @@ bun install
 ELEVENLABS_API_KEY=your_elevenlabs_key
 MISTRAL_API_KEY=your_mistral_key
 OPENAI_API_KEY=your_openai_key
+AUTH_USERNAME=
+AUTH_PWD_HASH=
+JWT_SECRET=
 ```
 
 3. Start the development server:
