@@ -165,6 +165,10 @@ export class AudioQueuePlayer {
 		this.isPlaying = true;
 		this.currentChunk = next;
 		this.audio.src = next.url;
+
+		// Ensure playback rate is applied after setting new source
+		// Add a small delay to ensure the audio element is ready
+		await new Promise((resolve) => setTimeout(resolve, 10));
 		this.audio.playbackRate = this.playbackRate;
 
 		try {
