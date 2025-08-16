@@ -1,5 +1,7 @@
 "use client";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { LoginDialog } from "@/components/LoginDialog";
+import { ModelSelector } from "@/components/ModelSelector";
 import { TextReader } from "@/components/TextReader";
 import { VoiceCloner } from "@/components/VoiceCloner";
 import { VoiceSelector } from "@/components/VoiceSelector";
@@ -105,8 +107,10 @@ export default function Home() {
 						</div>
 					</div>
 				</div>
-				<div className="flex justify-center">
+				<div className="flex justify-center gap-4">
 					<VoiceSelector />
+					<ModelSelector />
+					<LanguageSelector />
 				</div>
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 					<TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4">

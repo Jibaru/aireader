@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileInput } from "@/components/ui/file-input";
 import { Label } from "@/components/ui/label";
-// Page-level TTS; no chunking per page
 import { AudioQueuePlayer } from "@/lib/audio/queue";
 import { pdfLibrary } from "@/lib/pdf/library";
 import { ttsCache } from "@/lib/pdf/tts-cache";
+import { useLanguageStore } from "@/store/language";
+import { useModelStore } from "@/store/model";
 import { useVelocityStore } from "@/store/velocity";
 import { useVoiceStore } from "@/store/voices";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/build/pdf.mjs";
@@ -27,6 +28,8 @@ export const PdfReader = forwardRef<{
 }>(function PdfReader(_, ref) {
 	const { selectedVoiceId } = useVoiceStore();
 	const { playbackRate } = useVelocityStore();
+	const { selectedModel } = useModelStore();
+	const { selectedLanguage } = useLanguageStore();
 	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isLoadingCache, setIsLoadingCache] = useState(false);
@@ -275,6 +278,8 @@ export const PdfReader = forwardRef<{
 		const formData = new FormData();
 		formData.append("file", imageBlob, `page_${pageNumber}.png`);
 		formData.append("pageNumber", pageNumber.toString());
+		formData.append("modelCode", selectedModel);
+		formData.append("languageCode", selectedLanguage);
 
 		// Call server-side API to handle Mistral OCR
 		const response = await fetch("/api/pdf/ocr", {
