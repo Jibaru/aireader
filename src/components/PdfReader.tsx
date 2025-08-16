@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { FileInput } from "@/components/ui/file-input";
 import { Label } from "@/components/ui/label";
 import { AudioQueuePlayer } from "@/lib/audio/queue";
+import { OCR_MODELS } from "@/lib/constants/ocr";
 import { pdfLibrary } from "@/lib/pdf/library";
 import { ttsCache } from "@/lib/pdf/tts-cache";
 import { useLanguageStore } from "@/store/language";
@@ -267,21 +268,57 @@ export const PdfReader = forwardRef<{
 		});
 	}
 
+	async function extractPageAsPdf(
+		file: File | Blob,
+		pageNumber: number,
+	): Promise<Blob | null> {
+		try {
+			// Import pdf-lib dynamically to avoid SSR issues
+			const { PDFDocument } = await import("pdf-lib");
+
+			const arrayBuffer = await file.arrayBuffer();
+			const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+			if (pageNumber > pdfDoc.getPageCount() || pageNumber < 1) {
+				return null;
+			}
+
+			// Create a new PDF with just the specified page
+			const newPdfDoc = await PDFDocument.create();
+			const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageNumber - 1]);
+			newPdfDoc.addPage(copiedPage);
+
+			const pdfBytes = await newPdfDoc.save();
+			return new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+		} catch (error) {
+			console.error("Error extracting page as PDF:", error);
+			return null;
+		}
+	}
+
 	async function extractPageText(
 		file: File | Blob,
 		pageNumber: number,
 	): Promise<string> {
-		const imageBlob = await extractPageAsImage(file, pageNumber);
-		if (!imageBlob) return "";
-
-		// Create a temporary file
 		const formData = new FormData();
-		formData.append("file", imageBlob, `page_${pageNumber}.png`);
+
+		if (selectedModel === OCR_MODELS.MISTRAL) {
+			// For Mistral, extract page as image
+			const imageBlob = await extractPageAsImage(file, pageNumber);
+			if (!imageBlob) return "";
+			formData.append("file", imageBlob, `page_${pageNumber}.png`);
+		} else if (selectedModel === OCR_MODELS.OPENAI) {
+			// For OpenAI, extract single page as PDF
+			const pagePdfBlob = await extractPageAsPdf(file, pageNumber);
+			if (!pagePdfBlob) return "";
+			formData.append("file", pagePdfBlob, `page_${pageNumber}.pdf`);
+		}
+
 		formData.append("pageNumber", pageNumber.toString());
 		formData.append("modelCode", selectedModel);
 		formData.append("languageCode", selectedLanguage);
 
-		// Call server-side API to handle Mistral OCR
+		// Call server-side API to handle OCR
 		const response = await fetch("/api/pdf/ocr", {
 			method: "POST",
 			body: formData,
