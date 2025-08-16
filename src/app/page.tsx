@@ -109,11 +109,19 @@ export default function Home() {
 					<VoiceSelector />
 				</div>
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-					<TabsList className="grid w-full grid-cols-4">
-						<TabsTrigger value="text">Text to Speech</TabsTrigger>
-						<TabsTrigger value="pdf">PDF Reader</TabsTrigger>
-						<TabsTrigger value="library">Library</TabsTrigger>
-						<TabsTrigger value="voice">Add Voice</TabsTrigger>
+					<TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4">
+						<TabsTrigger value="text" className="text-xs sm:text-sm">
+							Text to Speech
+						</TabsTrigger>
+						<TabsTrigger value="pdf" className="text-xs sm:text-sm">
+							PDF Reader
+						</TabsTrigger>
+						<TabsTrigger value="library" className="text-xs sm:text-sm">
+							Library
+						</TabsTrigger>
+						<TabsTrigger value="voice" className="text-xs sm:text-sm">
+							Add Voice
+						</TabsTrigger>
 					</TabsList>
 					<TabsContent value="text">
 						<TextReader />
