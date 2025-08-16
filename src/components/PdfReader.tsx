@@ -3,6 +3,7 @@ import { MediaControls } from "@/components/MediaControls";
 import { PdfViewer } from "@/components/PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FileInput } from "@/components/ui/file-input";
 import { Label } from "@/components/ui/label";
 // Page-level TTS; no chunking per page
 import { AudioQueuePlayer } from "@/lib/audio/queue";
@@ -35,6 +36,7 @@ export const PdfReader = forwardRef<{
 	const [currentPdfFile, setCurrentPdfFile] = useState<File | Blob | null>(
 		null,
 	);
+	const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 	const playerRef = useRef<AudioQueuePlayer | null>(null);
 
 	function ensurePlayer(): AudioQueuePlayer {
@@ -70,13 +72,13 @@ export const PdfReader = forwardRef<{
 		}
 	}, [playbackRate]);
 
-	async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0];
+	async function onFileSelect(file: File | null) {
 		if (!file) return;
 
 		try {
 			setPdfUrl(URL.createObjectURL(file));
 			setCurrentPdfFile(file);
+			setSelectedFileName(file.name);
 			// Generate unique PDF identifier for caching
 			const id = await ttsCache.generatePdfId(file);
 			setPdfId(id);
@@ -96,6 +98,7 @@ export const PdfReader = forwardRef<{
 			try {
 				setPdfUrl(URL.createObjectURL(pdfBlob));
 				setCurrentPdfFile(pdfBlob);
+				setSelectedFileName("PDF from library");
 				setPdfId(pdfId);
 				setCurrentPage(1);
 				// Force update cached status after loading
@@ -331,15 +334,13 @@ export const PdfReader = forwardRef<{
 
 	return (
 		<Card className="space-y-4 p-4">
-			<div className="space-y-2">
-				<Label htmlFor="pdfFile">Upload PDF</Label>
-				<input
-					id="pdfFile"
-					type="file"
-					accept="application/pdf"
-					onChange={onUpload}
-				/>
-			</div>
+			<FileInput
+				label="Upload PDF"
+				accept="application/pdf"
+				onChange={onFileSelect}
+				placeholder="Click to upload PDF"
+				dragText="or drag and drop"
+			/>
 			{pdfUrl ? (
 				<div className="space-y-2">
 					<Label>PDF Viewer</Label>
