@@ -10,7 +10,7 @@ export async function translate(
 	if (!text) throw new Error("No text provided for translation.");
 
 	const { text: translated } = await generateText({
-		model: openai("gpt-4o-mini"), // fast, cheaper model
+		model: openai("gpt-5-nano"), // fast, cheaper model
 		prompt: `<role>You are a expert translator</role>
 <task>Translate the input text to ${languageCode} language.</task>
 <input>${text}</input>
@@ -30,7 +30,7 @@ export async function extractPdfText(
 
 	// Use OpenAI Responses API for PDF processing
 	const response = await client.responses.create({
-		model: "gpt-4o",
+		model: "gpt-5-nano",
 		input: [
 			{
 				role: "user",
