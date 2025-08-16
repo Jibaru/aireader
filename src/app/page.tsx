@@ -75,42 +75,39 @@ export default function Home() {
 		<div className="min-h-screen bg-gradient-to-br from-background to-muted/30 p-8">
 			<div className="mx-auto max-w-4xl space-y-8">
 				<div className="space-y-2 text-center">
-					<div className="flex items-center justify-between">
-						<div className="flex-1" />
-						<div className="flex-1">
-							<h1 className="font-bold text-3xl tracking-tight">AIReader</h1>
-							<p className="text-muted-foreground">
-								Listen to PDFs and text using ElevenLabs voices
-							</p>
-						</div>
-						<div className="flex flex-1 items-center justify-end gap-4">
-							{isAuthenticated ? (
-								<>
-									{username && (
-										<span className="text-muted-foreground text-sm">
-											Welcome, {username}
-										</span>
-									)}
-									<Button variant="outline" size="sm" onClick={handleLogout}>
-										Logout
-									</Button>
-								</>
-							) : (
-								<Button
-									variant="default"
-									size="sm"
-									onClick={() => setShowLoginDialog(true)}
-								>
-									Login
-								</Button>
-							)}
-						</div>
-					</div>
+					<h1 className="font-bold text-3xl tracking-tight">AIReader</h1>
+					<p className="text-muted-foreground">
+						Listen to PDFs and text using ElevenLabs voices
+					</p>
 				</div>
 				<div className="flex justify-center gap-4">
 					<VoiceSelector />
 					<ModelSelector />
 					<LanguageSelector />
+				</div>
+				<div className="flex justify-center">
+					<div className="flex items-center gap-4">
+						{isAuthenticated ? (
+							<>
+								{username && (
+									<span className="text-muted-foreground text-sm">
+										Welcome, {username}
+									</span>
+								)}
+								<Button variant="outline" size="sm" onClick={handleLogout}>
+									Logout
+								</Button>
+							</>
+						) : (
+							<Button
+								variant="default"
+								size="sm"
+								onClick={() => setShowLoginDialog(true)}
+							>
+								Login
+							</Button>
+						)}
+					</div>
 				</div>
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 					<TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:grid-cols-4">

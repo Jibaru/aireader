@@ -28,32 +28,40 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 });
 		}
 
-		// Save the file temporarily
-		const bytes = await file.arrayBuffer();
-		const buffer = Buffer.from(bytes);
-		const tempPath = join(tmpdir(), `page_${pageNumber}_${Date.now()}.png`);
-
-		await writeFile(tempPath, buffer);
-
+		let tempPath = "";
 		try {
 			let translatedText = "";
 			if (modelCode === OCR_MODELS.MISTRAL) {
-				// Upload to Mistral and extract text
+				// Save the file temporarily
+				const bytes = await file.arrayBuffer();
+				const buffer = Buffer.from(bytes);
+				tempPath = join(tmpdir(), `page_${pageNumber}_${Date.now()}.png`);
+				await writeFile(tempPath, buffer);
+
 				const signedUrl = await uploadFile(tempPath);
 				const text = await extractText(signedUrl);
 				translatedText = await translate(text, languageCode);
-			} else if (modelCode === OCR_MODELS.OPENAI) {
-				translatedText = await extractPdfText(tempPath, languageCode);
-			}
 
-			// Clean up temp file
-			await unlink(tempPath);
+				await unlink(tempPath);
+			} else if (modelCode === OCR_MODELS.OPENAI) {
+				// Save the file as PDF temporarily
+				const bytes = await file.arrayBuffer();
+				const buffer = Buffer.from(bytes);
+				tempPath = join(tmpdir(), `document_${Date.now()}.pdf`);
+				await writeFile(tempPath, buffer);
+
+				translatedText = await extractPdfText(tempPath, languageCode);
+
+				await unlink(tempPath);
+			}
 
 			return NextResponse.json({ text: translatedText });
 		} catch (error) {
 			// Clean up temp file in case of error
 			try {
-				await unlink(tempPath);
+				if (tempPath !== "") {
+					await unlink(tempPath);
+				}
 			} catch {}
 			throw error;
 		}
