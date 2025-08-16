@@ -19,6 +19,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { toast } from "sonner";
 
 export const PdfReader = forwardRef<{
 	loadFromLibrary: (blob: Blob, id: string) => void;
@@ -121,7 +122,13 @@ export const PdfReader = forwardRef<{
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ text: chunkText, voiceId }),
 		});
-		if (!res.ok) return;
+		if (!res.ok) {
+			if (res.status === 401) {
+				const error = await res.json();
+				toast.error(error.error || "Authentication required");
+			}
+			return;
+		}
 		const blob = await res.blob();
 		const url = URL.createObjectURL(blob);
 		ensurePlayer().enqueue({ id: crypto.randomUUID(), url });
@@ -205,7 +212,13 @@ export const PdfReader = forwardRef<{
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ text: pageText, voiceId }),
 		});
-		if (!res.ok) return;
+		if (!res.ok) {
+			if (res.status === 401) {
+				const error = await res.json();
+				toast.error(error.error || "Authentication required");
+			}
+			return;
+		}
 		const blob = await res.blob();
 
 		await ttsCache.addPageToCache(pdfId, voiceId, pageNumber, blob);
@@ -267,7 +280,12 @@ export const PdfReader = forwardRef<{
 		});
 
 		if (!response.ok) {
-			console.error("OCR failed:", await response.text());
+			if (response.status === 401) {
+				const error = await response.json();
+				toast.error(error.error || "Authentication required");
+			} else {
+				console.error("OCR failed:", await response.text());
+			}
 			return "";
 		}
 

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVoiceStore } from "@/store/voices";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function VoiceCloner() {
 	const [name, setName] = useState("My Voice");
@@ -20,10 +21,19 @@ export function VoiceCloner() {
 		for (const f of Array.from(files)) form.append("files", f);
 		const res = await fetch("/api/voice-clone", { method: "POST", body: form });
 		setIsLoading(false);
-		if (!res.ok) return;
+		if (!res.ok) {
+			if (res.status === 401) {
+				const error = await res.json();
+				toast.error(error.error || "Authentication required");
+			} else {
+				toast.error("Voice cloning failed");
+			}
+			return;
+		}
 		const data = await res.json();
 		const newVoice = { voiceId: data.voice.voiceId, name: data.voice.name };
 		setVoices([...voices, newVoice]);
+		toast.success("Voice cloned successfully!");
 	}
 
 	return (

@@ -1,11 +1,14 @@
 "use client";
+import { LoginDialog } from "@/components/LoginDialog";
 import { TextReader } from "@/components/TextReader";
 import { VoiceCloner } from "@/components/VoiceCloner";
 import { VoiceSelector } from "@/components/VoiceSelector";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PdfLibraryItem } from "@/lib/pdf/library";
+import { useAuthStore } from "@/store/auth";
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Dynamic imports for PDF components (client-only)
 const PdfReader = dynamic(
@@ -41,10 +44,17 @@ const PdfLibrary = dynamic(
 );
 
 export default function Home() {
+	const { isAuthenticated, username, logout, checkAuth } = useAuthStore();
 	const [activeTab, setActiveTab] = useState("text");
+	const [showLoginDialog, setShowLoginDialog] = useState(false);
 	const pdfReaderRef = useRef<{
 		loadFromLibrary: (blob: Blob, id: string) => void;
 	}>(null);
+
+	// Check authentication on mount
+	useEffect(() => {
+		checkAuth();
+	}, [checkAuth]);
 
 	const handleSelectPdfFromLibrary = async (pdf: PdfLibraryItem) => {
 		// Switch to PDF Reader tab
@@ -55,14 +65,45 @@ export default function Home() {
 		}, 100);
 	};
 
+	const handleLogout = () => {
+		logout();
+	};
+
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-background to-muted/30 p-8">
 			<div className="mx-auto max-w-4xl space-y-8">
 				<div className="space-y-2 text-center">
-					<h1 className="font-bold text-3xl tracking-tight">AIReader</h1>
-					<p className="text-muted-foreground">
-						Listen to PDFs and text using ElevenLabs voices
-					</p>
+					<div className="flex items-center justify-between">
+						<div className="flex-1" />
+						<div className="flex-1">
+							<h1 className="font-bold text-3xl tracking-tight">AIReader</h1>
+							<p className="text-muted-foreground">
+								Listen to PDFs and text using ElevenLabs voices
+							</p>
+						</div>
+						<div className="flex flex-1 items-center justify-end gap-4">
+							{isAuthenticated ? (
+								<>
+									{username && (
+										<span className="text-muted-foreground text-sm">
+											Welcome, {username}
+										</span>
+									)}
+									<Button variant="outline" size="sm" onClick={handleLogout}>
+										Logout
+									</Button>
+								</>
+							) : (
+								<Button
+									variant="default"
+									size="sm"
+									onClick={() => setShowLoginDialog(true)}
+								>
+									Login
+								</Button>
+							)}
+						</div>
+					</div>
 				</div>
 				<div className="flex justify-center">
 					<VoiceSelector />
@@ -88,6 +129,8 @@ export default function Home() {
 					</TabsContent>
 				</Tabs>
 			</div>
+
+			<LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} />
 		</div>
 	);
 }

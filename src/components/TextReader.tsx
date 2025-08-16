@@ -8,6 +8,7 @@ import { splitTextIntoChunks } from "@/lib/text/chunkText";
 import { useVelocityStore } from "@/store/velocity";
 import { useVoiceStore } from "@/store/voices";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export function TextReader() {
 	const { selectedVoiceId } = useVoiceStore();
@@ -37,7 +38,13 @@ export function TextReader() {
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ text: chunkText, voiceId }),
 		});
-		if (!res.ok) return;
+		if (!res.ok) {
+			if (res.status === 401) {
+				const error = await res.json();
+				toast.error(error.error || "Authentication required");
+			}
+			return;
+		}
 		const blob = await res.blob();
 		const url = URL.createObjectURL(blob);
 		ensurePlayer().enqueue({ id: crypto.randomUUID(), url });

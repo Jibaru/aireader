@@ -1,11 +1,16 @@
 import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { requireAuth } from "@/lib/auth/middleware";
 import { extractText, uploadFile } from "@/lib/mistral/helpers";
 import { translateToSpanish } from "@/lib/openai/helpers";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
+	// Check authentication
+	const authError = requireAuth(request);
+	if (authError) return authError;
+
 	try {
 		const formData = await request.formData();
 		const file = formData.get("file") as File;

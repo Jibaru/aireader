@@ -1,10 +1,15 @@
 import "server-only";
+import { requireAuth } from "@/lib/auth/middleware";
 import { getElevenLabsClient } from "@/lib/elevenlabs/client";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+	// Check authentication
+	const authError = requireAuth(req);
+	if (authError) return authError;
+
 	try {
 		const client = getElevenLabsClient();
 		const { text, voiceId, modelId, outputFormat } = await req.json();
