@@ -159,7 +159,7 @@ export function PdfLibrary({ onSelectPdf }: PdfLibraryProps) {
 									<div className="mb-2 flex items-center gap-2">
 										<FileText className="h-5 w-5 flex-shrink-0 text-red-600" />
 										<h3
-											className="truncate font-medium text-sm"
+											className="break-words font-medium text-sm leading-tight"
 											title={pdf.name}
 										>
 											{pdf.name.replace(/\.pdf$/i, "")}
