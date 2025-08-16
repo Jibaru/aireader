@@ -30,7 +30,7 @@ export async function extractPdfText(
 
 	// Use OpenAI Responses API for PDF processing
 	const response = await client.responses.create({
-		model: "gpt-4o-mini",
+		model: "gpt-4o",
 		input: [
 			{
 				role: "user",
