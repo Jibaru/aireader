@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
 				tempPath = join(tmpdir(), `document_${Date.now()}.pdf`);
 				await writeFile(tempPath, buffer);
 
-				translatedText = await extractPdfText(tempPath, languageCode);
+				const extractedText = await extractPdfText(tempPath);
+				translatedText = await translate(extractedText, languageCode);
 
 				await unlink(tempPath);
 			}

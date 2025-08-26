@@ -20,10 +20,7 @@ export async function translate(
 	return translated.trim();
 }
 
-export async function extractPdfText(
-	pdfPath: string,
-	languageCode = "es-ES",
-): Promise<string> {
+export async function extractPdfText(pdfPath: string): Promise<string> {
 	// Read PDF file and convert to base64
 	const pdfBuffer = fs.readFileSync(pdfPath);
 	const base64Pdf = pdfBuffer.toString("base64");
@@ -37,7 +34,7 @@ export async function extractPdfText(
 				content: [
 					{
 						type: "input_text",
-						text: `<role>You are an expert PDF text extraction and translator assistant</role>
+						text: `<role>You are an expert PDF text extraction assistant</role>
 <task>
 Extract all content from this PDF document while preserving the exact order and structure as it appears in the document.
 </task>
@@ -48,7 +45,6 @@ Extract all content from this PDF document while preserving the exact order and 
 4. Maintain the sequential order - if content appears as: text, figure, text, then output should be: text, [FIGURE: description], text
 5. Do not include headers or footer elements of the PDF
 6. Preserve table structures and formatting when possible
-7. Finally, translate all extracted text content to the target language: ${languageCode}
 </instructions>
 <output_format>
 Return the content in the exact order it appears in the PDF, with text content as-is and non-text elements described as [FIGURE: description].
