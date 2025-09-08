@@ -13,8 +13,7 @@ export async function POST(req: NextRequest) {
 
 	try {
 		const client = getElevenLabsClient();
-		const { text, voiceId, modelId, outputFormat } = await req.json();
-		const model = "open-ai";
+		const { text, voiceId, modelId, outputFormat, model } = await req.json();
 
 		if (!text || !voiceId) {
 			return new Response(
