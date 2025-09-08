@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { openai } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { experimental_generateSpeech, generateText } from "ai";
 import { client } from "./client";
 
 export async function translate(
@@ -73,4 +73,17 @@ Return the content in the exact order it appears in the PDF, with text content a
 				.join("\n");
 		})
 		.join("\n");
+}
+
+export async function textToSpeech(
+	content: string,
+): Promise<Uint8Array<ArrayBufferLike>> {
+	const audio = await experimental_generateSpeech({
+		model: openai.speech("gpt-4o-mini-tts"),
+		text: content,
+		voice: "alloy",
+		language: "es",
+	});
+
+	return audio.audio.uint8Array;
 }

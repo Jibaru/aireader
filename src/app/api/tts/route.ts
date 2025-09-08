@@ -1,6 +1,7 @@
 import "server-only";
 import { requireAuth } from "@/lib/auth/middleware";
 import { getElevenLabsClient } from "@/lib/elevenlabs/client";
+import { textToSpeech } from "@/lib/openai/helpers";
 import type { NextRequest } from "next/server";
 
 export const runtime = "nodejs";
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest) {
 	try {
 		const client = getElevenLabsClient();
 		const { text, voiceId, modelId, outputFormat } = await req.json();
+		const model = "open-ai";
 
 		if (!text || !voiceId) {
 			return new Response(
@@ -24,13 +26,24 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		const audioStream = await client.textToSpeech.convert(voiceId, {
-			text,
-			modelId: modelId || "eleven_multilingual_v2",
-			outputFormat: outputFormat || "mp3_44100_128",
-		});
+		if (model === "elevenlabs") {
+			const audioStream = await client.textToSpeech.convert(voiceId, {
+				text,
+				modelId: modelId || "eleven_multilingual_v2",
+				outputFormat: outputFormat || "mp3_44100_128",
+			});
 
-		return new Response(audioStream as ReadableStream, {
+			return new Response(audioStream as ReadableStream, {
+				status: 200,
+				headers: {
+					"content-type": "audio/mpeg",
+					"transfer-encoding": "chunked",
+				},
+			});
+		}
+		const speech: Uint8Array<ArrayBufferLike> = await textToSpeech(text);
+
+		return new Response(speech.buffer as ArrayBuffer, {
 			status: 200,
 			headers: {
 				"content-type": "audio/mpeg",
